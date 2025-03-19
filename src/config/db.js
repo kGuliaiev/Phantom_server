@@ -10,10 +10,7 @@ const connectDB = async () => {
             throw new Error("MONGO_URI не задан в .env");
         }
         
-        await mongoose.connect(mongoURI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+        await mongoose.connect(mongoURI);
 
         console.log('MongoDB подключена');
     } catch (error) {
