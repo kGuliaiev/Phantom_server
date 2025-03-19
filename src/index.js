@@ -11,9 +11,11 @@ import connectDB from './config/db.js';
 import routes from './routes/index.js';
 import authRoutes from './routes/authRoutes.js'; // Импорт маршрутов аутентификации
 import userRoutes from './routes/userRoutes.js'; // Импорт маршрутов пользователей
+import chatRoutes from './routes/chatRoutes.js'; // Импорт маршрутов чатов
 import { registerUser, loginUser } from './controllers/authController.js'; // Импорт контроллеров аутентификации
 import { getUserProfile, updateUserProfile } from './controllers/userController.js'; // Импорт контроллеров пользователей
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js'; // Импорт middleware обработки ошибок
+import { handleConnection } from './controllers/chatController.js'; // Импорт контроллера чатов
 
 // Подключение к MongoDB
 connectDB();
@@ -45,19 +47,23 @@ app.use('/api/', apiLimiter);
 app.use('/api', routes);
 app.use('/api/auth', authRoutes); // Подключение маршрутов аутентификации
 app.use('/api/users', userRoutes); // Подключение маршрутов пользователей
+app.use('/api/chat', chatRoutes); // Подключение маршрутов чатов
 
 // Подключение middleware обработки ошибок
 app.use(notFound);
 app.use(errorHandler);
 
 // WebSocket обработка
-io.on('connection', (socket) => {
-    console.log('Новое WebSocket-соединение');
-    socket.on('disconnect', () => {
-        console.log('Пользователь отключился');
-    });
-});
+io.on('connection', handleConnection); // Обновлено для использования контроллера чатов
 
 // Запуск сервера
 const PORT = process.env.PORT || 5001;
+
+app._router.stack.forEach((r) => {
+    if (r.route && r.route.path) {
+        console.log(`Маршрут: ${r.route.path} - Методы: ${Object.keys(r.route.methods)}`);
+    }
+});
+
+
 server.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}`));

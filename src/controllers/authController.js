@@ -1,40 +1,88 @@
 import User from '../models/users.js';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
-export const register = async (req, res) => {
+// Запрос сброса пароля
+export const resetPasswordRequest = async (req, res) => {
     try {
-        const { username, password, publicKey } = req.body;
-        if (!username || !password || !publicKey) {
-            return res.status(400).json({ message: 'Все поля обязательны' });
+        const { username } = req.body;
+        const user = await User.findOne({ username });
+
+        if (!user) {
+            return res.status(404).json({ message: 'Пользователь не найден' });
         }
 
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            return res.status(400).json({ message: 'Пользователь уже существует' });
-        }
-
-        const user = new User({ username, password, publicKey });
+        // Генерируем код подтверждения (6 цифр)
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetCode = resetCode;
+        user.resetCodeExpires = Date.now() + 15 * 60 * 1000; // Код действителен 15 минут
         await user.save();
 
-        res.status(201).json({ message: 'Пользователь зарегистрирован' });
+        console.log(`Код для сброса пароля: ${resetCode}`);
+
+        res.json({ message: 'Код сброса пароля отправлен' });
     } catch (error) {
-        res.status(500).json({ message: 'Ошибка сервера' });
+        res.status(500).json({ message: 'Ошибка при запросе сброса пароля' });
     }
 };
 
-export const login = async (req, res) => {
+// Подтверждение кода и смена пароля
+export const resetPassword = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, resetCode, newPassword } = req.body;
+        const user = await User.findOne({ username, resetCode });
 
-        const user = await User.findOne({ username });
-        if (!user || !(await user.comparePassword(password))) {
-            return res.status(401).json({ message: 'Неверные учетные данные' });
+        if (!user || user.resetCodeExpires < Date.now()) {
+            return res.status(400).json({ message: 'Неверный или просроченный код' });
         }
 
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.resetCode = undefined;
+        user.resetCodeExpires = undefined;
+        await user.save();
 
-        res.status(200).json({ token });
+        res.json({ message: 'Пароль успешно изменен' });
     } catch (error) {
-        res.status(500).json({ message: 'Ошибка сервера' });
+        res.status(500).json({ message: 'Ошибка при сбросе пароля' });
+    }
+};
+
+// Включение 2FA (OTP-код)
+export const enable2FA = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'Пользователь не найден' });
+        }
+
+        // Генерируем секретный ключ для Google Authenticator
+        user.twoFactorSecret = crypto.randomBytes(10).toString('hex');
+        user.twoFactorEnabled = true;
+        await user.save();
+
+        res.json({ message: '2FA включена', secret: user.twoFactorSecret });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при включении 2FA' });
+    }
+};
+
+// Проверка 2FA при входе
+export const verify2FA = async (req, res) => {
+    try {
+        const { username, otp } = req.body;
+        const user = await User.findOne({ username });
+
+        if (!user || !user.twoFactorEnabled) {
+            return res.status(400).json({ message: '2FA не активирована' });
+        }
+
+        if (otp !== user.twoFactorSecret) {  // В реальном проекте сравнивать с OTP-кодом из Google Authenticator
+            return res.status(401).json({ message: 'Неверный код 2FA' });
+        }
+
+        res.json({ message: '2FA подтверждена' });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка проверки 2FA' });
     }
 };
