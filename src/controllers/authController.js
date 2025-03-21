@@ -3,6 +3,29 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
+// Регистрация пользователя
+export const registerUser = async (req, res) => {
+    try {
+        const { username, password, publicKey } = req.body;
+        if (!username || !password || !publicKey) {
+            return res.status(400).json({ message: 'Все поля обязательны' });
+        }
+
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Пользователь уже существует' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new User({ username, password: hashedPassword, publicKey });
+        await user.save();
+
+        res.status(201).json({ message: 'Пользователь зарегистрирован' });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка сервера' });
+    }
+};
+
 // Запрос сброса пароля
 export const resetPasswordRequest = async (req, res) => {
     try {
@@ -10,19 +33,26 @@ export const resetPasswordRequest = async (req, res) => {
         const user = await User.findOne({ username });
 
         if (!user) {
+            console.error('Ошибка: Пользователь не найден');
             return res.status(404).json({ message: 'Пользователь не найден' });
         }
 
         // Генерируем код подтверждения (6 цифр)
         const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-        user.resetCode = resetCode;
-        user.resetCodeExpires = Date.now() + 15 * 60 * 1000; // Код действителен 15 минут
-        await user.save();
+        const resetCodeHash = crypto.createHash('sha256').update(resetCode).digest('hex');
+        await User.updateOne(
+            { username },
+            {
+                resetCode: resetCodeHash,
+                resetCodeExpires: Date.now() + 15 * 60 * 1000, // Код действителен 15 минут
+            }
+        );
 
         console.log(`Код для сброса пароля: ${resetCode}`);
 
         res.json({ message: 'Код сброса пароля отправлен' });
     } catch (error) {
+        console.error('Ошибка при запросе сброса пароля:', error);
         res.status(500).json({ message: 'Ошибка при запросе сброса пароля' });
     }
 };
@@ -31,10 +61,14 @@ export const resetPasswordRequest = async (req, res) => {
 export const resetPassword = async (req, res) => {
     try {
         const { username, resetCode, newPassword } = req.body;
-        const user = await User.findOne({ username, resetCode });
+        const user = await User.findOne({ username });
 
         if (!user || user.resetCodeExpires < Date.now()) {
             return res.status(400).json({ message: 'Неверный или просроченный код' });
+        }
+        const resetCodeHash = crypto.createHash('sha256').update(resetCode).digest('hex');
+        if (user.resetCode !== resetCodeHash) {
+            return res.status(400).json({ message: 'Неверный код сброса' });
         }
 
         user.password = await bcrypt.hash(newPassword, 10);
@@ -81,8 +115,32 @@ export const verify2FA = async (req, res) => {
             return res.status(401).json({ message: 'Неверный код 2FA' });
         }
 
-        res.json({ message: '2FA подтверждена' });
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        res.json({ message: '2FA подтверждена', token });
     } catch (error) {
         res.status(500).json({ message: 'Ошибка проверки 2FA' });
     }
 };
+
+// Вход пользователя (login)
+export const loginUser = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(401).json({ message: 'Неверные учетные данные' });
+        }
+
+        // Проверяем, включена ли 2FA
+        if (user.twoFactorEnabled) {
+            return res.status(200).json({ message: 'Требуется 2FA' });
+        }
+
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        res.status(200).json({ token });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка сервера' });
+    }
+};
+// Duplicate export removed. Functions are already exported individually.

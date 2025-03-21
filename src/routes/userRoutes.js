@@ -8,25 +8,26 @@ import {
     getPublicKeyByIdentifier, 
     deactivateUser 
 } from '../controllers/userController.js';
+import { 
+    uploadKeys, 
+    checkKeyStatus, 
+    requestKey, 
+    deleteUsedKey 
+} from '../controllers/keyController.js';
 
 const router = express.Router();
 
-// Получение профиля пользователя (только для авторизованных пользователей)
 router.get('/profile', protect, getUserProfile);
-
-// Обновление профиля пользователя
 router.put('/profile', protect, updateUserProfile);
-
-// Генерация уникального идентификатора
 router.get('/generate-identifier', generateUniqueIdentifier);
-
-// Проверка уникальности идентификатора
 router.post('/check-identifier', checkIdentifier);
-
-// Получение публичного ключа по идентификатору
 router.post('/get-public-key', getPublicKeyByIdentifier);
-
-// Деактивация пользователя
 router.put('/deactivate', protect, deactivateUser);
+
+// 🔐 Обмен одноразовыми ключами
+router.post('/upload-keys', protect, uploadKeys);
+router.post('/check-key-status', protect, checkKeyStatus);
+router.post('/request-key', protect, requestKey);
+router.post('/delete-used-key', protect, deleteUsedKey);
 
 export default router;
