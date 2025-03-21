@@ -9,19 +9,13 @@ import {
 } from '../controllers/authController.js';
 
 const router = express.Router();
+router.post('/register', registerUser); // Регистрация
+router.post('/login', loginUser); // Вход
 
-// Регистрация
-router.post('/register', registerUser);
-
-// Вход
-router.post('/login', loginUser);
-
-// Сброс пароля
-router.post('/reset-password-request', resetPasswordRequest);
+router.post('/reset-password-request', resetPasswordRequest); // Сброс пароля
 router.post('/reset-password', resetPassword);
 
-// 2FA
-router.post('/enable-2fa', enable2FA);
+router.post('/enable-2fa', enable2FA); // 2FA
 router.post('/verify-2fa', verify2FA);
 
 export default router;

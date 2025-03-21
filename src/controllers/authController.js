@@ -4,11 +4,23 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
+// Функция кодирования в Base64
+const toBase64 = (str) => Buffer.from(str, 'utf-8').toString('base64');
+
+// Функция проверки Base64 (чтобы не кодировать дважды)
+const isBase64 = (str) => {
+    try {
+        return Buffer.from(str, 'base64').toString('utf-8') !== str;
+    } catch (err) {
+        return false;
+    }
+};
+
 // Регистрация пользователя
 export const registerUser = async (req, res) => {
     console.log('📝 Попытка регистрации пользователя');
     try {
-        const { username, password, publicKey, identifier, identityKey, signedPreKey, oneTimePreKeys } = req.body;
+        let { username, password, publicKey, identifier, identityKey, signedPreKey, oneTimePreKeys } = req.body;
 
         console.log('Полученные данные:', {
             username,
@@ -31,7 +43,14 @@ export const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'Пользователь уже существует' });
         }
 
+        // Хеширование пароля
         const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Приведение ключей к Base64 (если они ещё не в этом формате)
+        publicKey = isBase64(publicKey) ? publicKey : toBase64(publicKey);
+        identityKey = isBase64(identityKey) ? identityKey : toBase64(identityKey);
+        signedPreKey = isBase64(signedPreKey) ? signedPreKey : toBase64(signedPreKey);
+        oneTimePreKeys = oneTimePreKeys.map(key => (isBase64(key) ? key : toBase64(key)));
 
         const user = new User({
             username,
