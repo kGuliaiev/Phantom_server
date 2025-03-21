@@ -5,3 +5,5 @@
 [2025-03-19T09:49:16.144Z] 404 Not Found: /api/auth
 [2025-03-19T10:06:10.058Z] 404 Not Found: /api/users/generate-identifier
 [2025-03-19T13:41:16.040Z] 404 Not Found: /api/auth/reset-password-request
+[2025-03-21T08:22:04.651Z] Ошибка сервера: Expected ',' or '}' after property value in JSON at position 54 (line 3 column 28)
+[2025-03-21T09:35:54.262Z] 404 Not Found: /api/chat/send

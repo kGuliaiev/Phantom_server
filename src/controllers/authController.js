@@ -1,13 +1,12 @@
 import User from '../models/users.js';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 // Регистрация пользователя
 export const registerUser = async (req, res) => {
     try {
-        const { username, password, publicKey } = req.body;
-        if (!username || !password || !publicKey) {
+        const { username, password, publicKey, identifier } = req.body;
+        if (!username || !password || !publicKey || !identifier) {
             return res.status(400).json({ message: 'Все поля обязательны' });
         }
 
@@ -16,15 +15,39 @@ export const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'Пользователь уже существует' });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ username, password: hashedPassword, publicKey });
+        // Передаем пароль без хеширования — pre‑hook выполнит хеширование
+        const user = new User({ username, password, publicKey, identifier });
         await user.save();
 
         res.status(201).json({ message: 'Пользователь зарегистрирован' });
     } catch (error) {
+        console.error('Ошибка регистрации:', error);
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 };
+
+// Вход пользователя (login)
+export const loginUser = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(401).json({ message: 'Неверные учетные данные' });
+        }
+
+        if (user.twoFactorEnabled) {
+            return res.status(200).json({ message: 'Требуется 2FA' });
+        }
+
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        res.status(200).json({ token });
+    } catch (error) {
+        console.error('Ошибка входа:', error);
+        res.status(500).json({ message: 'Ошибка сервера' });
+    }
+};
+
 
 // Запрос сброса пароля
 export const resetPasswordRequest = async (req, res) => {
@@ -121,26 +144,3 @@ export const verify2FA = async (req, res) => {
         res.status(500).json({ message: 'Ошибка проверки 2FA' });
     }
 };
-
-// Вход пользователя (login)
-export const loginUser = async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        const user = await User.findOne({ username });
-
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({ message: 'Неверные учетные данные' });
-        }
-
-        // Проверяем, включена ли 2FA
-        if (user.twoFactorEnabled) {
-            return res.status(200).json({ message: 'Требуется 2FA' });
-        }
-
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.status(200).json({ token });
-    } catch (error) {
-        res.status(500).json({ message: 'Ошибка сервера' });
-    }
-};
-// Duplicate export removed. Functions are already exported individually.

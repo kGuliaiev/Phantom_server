@@ -1,5 +1,5 @@
 import User from '../models/users.js';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
 // Проверка уникальности идентификатора
