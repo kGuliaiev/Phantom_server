@@ -28,25 +28,34 @@ export const registerUser = async (req, res) => {
 
 // Вход пользователя (login)
 export const loginUser = async (req, res) => {
+    const { username, password } = req.body;
+  
     try {
-        const { username, password } = req.body;
-        const user = await User.findOne({ username });
-
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({ message: 'Неверные учетные данные' });
-        }
-
-        if (user.twoFactorEnabled) {
-            return res.status(200).json({ message: 'Требуется 2FA' });
-        }
-
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.status(200).json({ token });
-    } catch (error) {
-        console.error('Ошибка входа:', error);
-        res.status(500).json({ message: 'Ошибка сервера' });
+      const user = await User.findOne({ username });
+  
+      if (!user) {
+        return res.status(401).json({ message: 'Неверные учетные данные' });
+      }
+  
+      const isMatch = await bcrypt.compare(password, user.password);
+  
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Неверные учетные данные' });
+      }
+  
+      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+        expiresIn: '7d'
+      });
+  
+      res.json({
+        token,
+        userId: user._id,
+        username: user.username
+      });
+    } catch (err) {
+      res.status(500).json({ message: 'Ошибка входа', error: err.message });
     }
-};
+  };
 
 
 // Запрос сброса пароля
