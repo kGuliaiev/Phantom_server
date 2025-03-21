@@ -1,62 +1,102 @@
+// src/controllers/authController.js
 import User from '../models/users.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 
 // Регистрация пользователя
 export const registerUser = async (req, res) => {
+    console.log('📝 Попытка регистрации пользователя');
     try {
-        const { username, password, publicKey, identifier } = req.body;
-        if (!username || !password || !publicKey || !identifier) {
-            return res.status(400).json({ message: 'Все поля обязательны' });
+        const { username, password, publicKey, identifier, identityKey, signedPreKey, oneTimePreKeys } = req.body;
+
+        console.log('Полученные данные:', {
+            username,
+            password,
+            publicKey,
+            identifier,
+            identityKey,
+            signedPreKey,
+            oneTimePreKeys
+        });
+
+        if (!username || !password || !publicKey || !identifier || !identityKey || !signedPreKey || !Array.isArray(oneTimePreKeys)) {
+            console.log('❌ Отсутствуют обязательные поля');
+            return res.status(400).json({ message: 'Все поля обязательны для регистрации' });
         }
 
         const existingUser = await User.findOne({ username });
         if (existingUser) {
+            console.log('⚠️ Пользователь уже существует');
             return res.status(400).json({ message: 'Пользователь уже существует' });
         }
 
-        // Передаем пароль без хеширования — pre‑hook выполнит хеширование
-        const user = new User({ username, password, publicKey, identifier });
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = new User({
+            username,
+            password: hashedPassword,
+            publicKey,
+            identifier,
+            identityKey,
+            signedPreKey,
+            oneTimePreKeys,
+            lastSeen: new Date()
+        });
+
         await user.save();
 
-        res.status(201).json({ message: 'Пользователь зарегистрирован' });
+        console.log('✅ Пользователь успешно зарегистрирован');
+        res.status(201).json({ message: 'Пользователь успешно зарегистрирован' });
     } catch (error) {
-        console.error('Ошибка регистрации:', error);
-        res.status(500).json({ message: 'Ошибка сервера' });
+        console.error('❗ Ошибка регистрации:', error);
+        res.status(500).json({ message: 'Ошибка регистрации на сервере' });
     }
 };
 
 // Вход пользователя (login)
 export const loginUser = async (req, res) => {
-    const { username, password } = req.body;
-  
-    try {
-      const user = await User.findOne({ username });
-  
-      if (!user) {
-        return res.status(401).json({ message: 'Неверные учетные данные' });
-      }
-  
-      const isMatch = await bcrypt.compare(password, user.password);
-  
-      if (!isMatch) {
-        return res.status(401).json({ message: 'Неверные учетные данные' });
-      }
-  
-      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-        expiresIn: '7d'
-      });
-  
-      res.json({
-        token,
-        userId: user._id,
-        username: user.username
-      });
-    } catch (err) {
-      res.status(500).json({ message: 'Ошибка входа', error: err.message });
-    }
-  };
+  const { username, password } = req.body;
 
+  console.log('🔐 Попытка входа:');
+  console.log('Username:', username);
+  console.log('Password (переданный):', password);
+
+  try {
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      console.log('⚠️ Пользователь не найден!');
+      return res.status(401).json({ message: 'Неверные учетные данные' });
+    }
+
+    console.log('✅ Пользователь найден. Проверка пароля...');
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    console.log('Сравнение bcrypt:', isMatch);
+
+    if (!isMatch) {
+      console.log('❌ Пароль не совпадает!');
+      return res.status(401).json({ message: 'Неверные учетные данные' });
+    }
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '7d'
+    });
+
+    console.log('✅ Успешный вход. Выдаётся токен.');
+
+    res.json({
+      token,
+      userId: user._id,
+      username: user.username
+    });
+  } catch (err) {
+    console.log('❗ Ошибка при входе:', err.message);
+    res.status(500).json({ message: 'Ошибка входа', error: err.message });
+  }
+};
 
 // Запрос сброса пароля
 export const resetPasswordRequest = async (req, res) => {
@@ -76,7 +116,7 @@ export const resetPasswordRequest = async (req, res) => {
             { username },
             {
                 resetCode: resetCodeHash,
-                resetCodeExpires: Date.now() + 15 * 60 * 1000, // Код действителен 15 минут
+                resetCodeExpires: Date.now() + 15 * 60 * 1000,
             }
         );
 
@@ -143,7 +183,7 @@ export const verify2FA = async (req, res) => {
             return res.status(400).json({ message: '2FA не активирована' });
         }
 
-        if (otp !== user.twoFactorSecret) {  // В реальном проекте сравнивать с OTP-кодом из Google Authenticator
+        if (otp !== user.twoFactorSecret) {
             return res.status(401).json({ message: 'Неверный код 2FA' });
         }
 
