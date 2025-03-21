@@ -8,10 +8,14 @@ const UserSchema = new mongoose.Schema({
     identifierEncrypted: { type: String, required: true },
     password: { type: String, required: true },
     publicKey: { type: String, required: true },
-    deactivated: { type: Boolean, default: false }, // Деактивация пользователя
-    lastSeen: { type: Date, default: Date.now }, // Последнее появление онлайн
+    // Новые поля для ключей:
+    identityKey: { type: String, required: false },    // долговременный ключ пользователя
+    signedPreKey: { type: String, required: false },     // временный подписанный ключ
+    oneTimePreKeys: { type: [String], default: [] },       // массив одноразовых ключей
+    deactivated: { type: Boolean, default: false },
+    lastSeen: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now }
-});
+});;
 
 // Хешируем идентификатор перед сохранением
 UserSchema.pre('save', async function (next) {
