@@ -7,71 +7,78 @@ import crypto from 'crypto';
 // Функция кодирования в Base64
 const toBase64 = (str) => Buffer.from(str, 'utf-8').toString('base64');
 
-// Функция проверки Base64 (чтобы не кодировать дважды)
+// 🔐 Утилита для проверки base64
 const isBase64 = (str) => {
+    return typeof str === 'string' && /^[A-Za-z0-9+/=]+$/.test(str) && str.length % 4 === 0;
+  };
+  
+  // Регистрация нового пользователя с ключами
+  export const registerUser = async (req, res) => {
     try {
-        return Buffer.from(str, 'base64').toString('utf-8') !== str;
-    } catch (err) {
-        return false;
-    }
-};
-
-// Регистрация пользователя
-export const registerUser = async (req, res) => {
-    console.log('📝 Попытка регистрации пользователя');
-    try {
-        let { username, password, publicKey, identifier, identityKey, signedPreKey, oneTimePreKeys } = req.body;
-
-        console.log('Полученные данные:', {
-            username,
-            password,
-            publicKey,
-            identifier,
-            identityKey,
-            signedPreKey,
-            oneTimePreKeys
-        });
-
-        if (!username || !password || !publicKey || !identifier || !identityKey || !signedPreKey || !Array.isArray(oneTimePreKeys)) {
-            console.log('❌ Отсутствуют обязательные поля');
-            return res.status(400).json({ message: 'Все поля обязательны для регистрации' });
-        }
-
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            console.log('⚠️ Пользователь уже существует');
-            return res.status(400).json({ message: 'Пользователь уже существует' });
-        }
-
-        // Хеширование пароля
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Приведение ключей к Base64 (если они ещё не в этом формате)
-        publicKey = isBase64(publicKey) ? publicKey : toBase64(publicKey);
-        identityKey = isBase64(identityKey) ? identityKey : toBase64(identityKey);
-        signedPreKey = isBase64(signedPreKey) ? signedPreKey : toBase64(signedPreKey);
-        oneTimePreKeys = oneTimePreKeys.map(key => (isBase64(key) ? key : toBase64(key)));
-
-        const user = new User({
-            username,
-            password: hashedPassword,
-            publicKey,
-            identifier,
-            identityKey,
-            signedPreKey,
-            oneTimePreKeys,
-            lastSeen: new Date()
-        });
-
-        await user.save();
-
-        console.log('✅ Пользователь успешно зарегистрирован');
-        res.status(201).json({ message: 'Пользователь успешно зарегистрирован' });
+      const { username, password, identifier, publicKey, identityKey, signedPreKey, oneTimePreKeys } = req.body;
+  
+      console.log('\n📝 Попытка регистрации пользователя');
+      console.log('Полученные данные:', {
+        username,
+        identifier,
+        publicKey,
+        identityKey,
+        signedPreKey,
+        oneTimePreKeys: Array.isArray(oneTimePreKeys) ? oneTimePreKeys.length : 'не массив'
+      });
+  
+      if (!username || !password || !identifier || !publicKey || !identityKey || !signedPreKey || !oneTimePreKeys) {
+        console.log('❌ Не все поля переданы');
+        return res.status(400).json({ message: 'Все поля обязательны для регистрации' });
+      }
+  
+      if (!isBase64(publicKey) || !isBase64(identityKey) || !isBase64(signedPreKey)) {
+        console.log('❌ Формат одного из ключей неверен (не Base64)');
+        return res.status(400).json({ message: 'Некорректный формат ключей (должен быть Base64)' });
+      }
+  
+      if (!Array.isArray(oneTimePreKeys) || oneTimePreKeys.some(k => !isBase64(k))) {
+        console.log('❌ Формат одного из одноразовых ключей неверен');
+        return res.status(400).json({ message: 'Некорректный формат одноразовых ключей' });
+      }
+  
+      const existingUsername = await User.findOne({ username });
+      if (existingUsername) {
+        console.log('⚠️ Username уже существует:', username);
+        return res.status(409).json({ message: 'Пользователь с таким именем уже существует' });
+      }
+  
+      const existingIdentifier = await User.findOne({ identifier });
+      if (existingIdentifier) {
+        console.log('⚠️ Identifier уже используется:', identifier);
+        return res.status(409).json({ message: 'Такой идентификатор уже зарегистрирован' });
+      }
+  
+      console.log('🔐 Хеширование пароля для:', username);
+      const hashedPassword = await bcrypt.hash(password, 10);
+      console.log('✅ Хеш пароля получен');
+  
+      const newUser = new User({
+        username,
+        password: hashedPassword,
+        identifier,
+        publicKey,
+        identityKey,
+        signedPreKey,
+        oneTimePreKeys,
+        lastSeen: new Date(),
+      });
+  
+      await newUser.save();
+      console.log('✅ Пользователь успешно зарегистрирован');
+  
+      res.status(201).json({ message: 'Пользователь успешно зарегистрирован' });
     } catch (error) {
-        console.error('❗ Ошибка регистрации:', error);
-        res.status(500).json({ message: 'Ошибка регистрации на сервере' });
+      console.error('❗ Ошибка при регистрации:', error);
+      res.status(500).json({ message: 'Ошибка сервера' });
     }
-};
+  };
+
 
 // Вход пользователя (login)
 export const loginUser = async (req, res) => {
@@ -212,3 +219,8 @@ export const verify2FA = async (req, res) => {
         res.status(500).json({ message: 'Ошибка проверки 2FA' });
     }
 };
+
+export const generateUniqueIdentifier = (req, res) => {
+    const uniqueId = 'id_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    res.json({ identifier: uniqueId });
+  };

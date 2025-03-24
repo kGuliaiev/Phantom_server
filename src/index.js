@@ -1,3 +1,5 @@
+// Файл: src/index.js или server.js (обновлён с подключением contactsRoutes)
+
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -5,13 +7,16 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import authRoutes from './routes/authRoutes.js';
 import http from 'http';
 import { Server } from 'socket.io';
 import connectDB from './config/db.js';
 import routes from './routes/index.js';
+import contactsRoutes from './routes/contactsRoutes.js';
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
-import { requestLogger } from './middlewares/requestLogger.js'; // Если такой middleware реализован
+import { requestLogger } from './middlewares/requestLogger.js';
 import { handleConnection } from './controllers/chatController.js';
+
 
 // Подключение к базе данных MongoDB
 connectDB();
@@ -27,7 +32,7 @@ app.set('io', io);
 
 // Middleware для парсинга JSON и логирования запросов
 app.use(express.json());
-app.use(requestLogger); // Добавляет подробное логирование запросов
+app.use(requestLogger);
 app.use(cors());
 app.use(helmet());
 
@@ -40,10 +45,12 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-// Подключение маршрутов через агрегированный роутер из routes/index.js
+// Подключение маршрутов
 app.use('/api', routes);
+app.use('/api/contacts', contactsRoutes);
+app.use('/api/auth', authRoutes);
 
-// Middleware для обработки ошибок (404 и глобальные)
+// Middleware для обработки ошибок
 app.use(notFound);
 app.use(errorHandler);
 

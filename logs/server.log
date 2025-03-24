@@ -22,3 +22,10 @@
 [2025-03-21T12:50:11.644Z] 404 Not Found: /register-user
 [2025-03-21T13:33:10.584Z] 404 Not Found: /api/register
 [2025-03-21T13:36:22.024Z] 404 Not Found: /register
+[2025-03-21T15:35:36.057Z] 404 Not Found: /register-user
+[2025-03-21T15:37:36.472Z] 404 Not Found: /users
+[2025-03-21T15:39:06.332Z] 404 Not Found: /users
+[2025-03-24T12:26:12.802Z] 404 Not Found: /api/auth/generate-identifier
+[2025-03-24T12:26:12.798Z] 404 Not Found: /api/auth/generate-identifier
+[2025-03-24T12:26:12.808Z] 404 Not Found: /api/auth/generate-identifier
+[2025-03-24T12:26:12.810Z] 404 Not Found: /api/auth/generate-identifier
