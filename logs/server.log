@@ -74,3 +74,9 @@
 [2025-03-25T07:33:17.523Z] 404 Not Found: /api/auth/check-user?userId=1
 [2025-03-25T07:33:29.089Z] 404 Not Found: /api/auth/check-user?userId=1
 [2025-03-25T07:33:29.133Z] 404 Not Found: /api/auth/check-user?userId=1
+[2025-03-25T08:31:07.359Z] 404 Not Found: /api/messages/receive?receiverId=33
+[2025-03-25T08:31:07.361Z] 404 Not Found: /api/messages/receive?receiverId=33
+[2025-03-25T08:31:27.286Z] 404 Not Found: /api/messages/receive?receiverId=33
+[2025-03-25T08:31:27.288Z] 404 Not Found: /api/messages/receive?receiverId=33
+[2025-03-25T08:31:37.512Z] 404 Not Found: /api/messages/receive?receiverId=33
+[2025-03-25T08:31:37.513Z] 404 Not Found: /api/messages/receive?receiverId=33
