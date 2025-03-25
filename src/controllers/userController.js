@@ -33,20 +33,21 @@ export const getAllUsers = async (req, res) => {
 // Генерация уникального идентификатора
 export const generateUniqueIdentifier = async (req, res) => {
     try {
-        let identifier;
-        let isUnique = false;
-
-        while (!isUnique) {
-            identifier = crypto.randomBytes(4).toString('hex').toUpperCase();
-            const existingUser = await User.findOne({ identifier });
-            if (!existingUser) isUnique = true;
-        }
-
-        res.json({ identifier });
+      let identifier;
+      let isUnique = false;
+  
+      while (!isUnique) {
+        identifier = crypto.randomBytes(4).toString('hex').toUpperCase(); // 8-символьный HEX, e.g. 'A1C2D3E4'
+        const existingUser = await User.findOne({ identifier });
+        if (!existingUser) isUnique = true;
+      }
+  
+      res.json({ identifier });
     } catch (error) {
-        res.status(500).json({ message: 'Ошибка генерации идентификатора' });
+      console.error('❌ Ошибка при генерации идентификатора:', error);
+      res.status(500).json({ message: 'Ошибка генерации идентификатора' });
     }
-};
+  };
 
 // Деактивация пользователя
 export const deactivateUser = async (req, res) => {
