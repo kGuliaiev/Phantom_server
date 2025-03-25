@@ -220,11 +220,6 @@ export const verify2FA = async (req, res) => {
     }
 };
 
-export const generateUniqueIdentifier = (req, res) => {
-    const uniqueId = 'id_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-    res.json({ identifier: uniqueId });
-  };
-
 
   // Удаление всех данных пользователя
 export const deleteUserCompletely = async (req, res) => {

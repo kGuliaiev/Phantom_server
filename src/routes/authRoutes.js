@@ -9,8 +9,6 @@ import {
     verify2FA 
 } from '../controllers/authController.js';
 
-import { generateUniqueIdentifier } from '../controllers/authController.js';
-
 const router = express.Router();
 router.post('/register', registerUser); // Регистрация
 router.post('/login', loginUser); // Вход
@@ -30,8 +28,6 @@ router.post('/reset-password', resetPassword);
 
 router.post('/enable-2fa', enable2FA); // 2FA
 router.post('/verify-2fa', verify2FA);
-
-router.get('/generate-identifier', generateUniqueIdentifier);
 
 router.delete('/users/:username/full-delete', deleteUserCompletely);
 

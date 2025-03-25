@@ -80,3 +80,8 @@
 [2025-03-25T08:31:27.288Z] 404 Not Found: /api/messages/receive?receiverId=33
 [2025-03-25T08:31:37.512Z] 404 Not Found: /api/messages/receive?receiverId=33
 [2025-03-25T08:31:37.513Z] 404 Not Found: /api/messages/receive?receiverId=33
+[2025-03-25T09:06:49.894Z] 404 Not Found: /api/messages/receive?receiverId=11
+[2025-03-25T09:06:49.895Z] 404 Not Found: /api/messages/receive?receiverId=11
+[2025-03-25T09:19:43.727Z] 404 Not Found: /api/auth/generate-identifier
+[2025-03-25T09:20:26.415Z] 404 Not Found: /api/auth/generateUniqueIdentifier
+[2025-03-25T09:21:51.028Z] 404 Not Found: /api/auth/generateUniqueIdentifier

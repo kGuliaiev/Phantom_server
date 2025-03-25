@@ -23,7 +23,7 @@ router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile);
 
 // Маршруты для идентификаторов
-router.get('/generate-identifier', generateUniqueIdentifier);
+router.get('/generateUniqueIdentifier', generateUniqueIdentifier);
 router.post('/check-identifier', checkIdentifier);
 router.post('/get-public-key', getPublicKeyByIdentifier);
 router.put('/deactivate', protect, deactivateUser);

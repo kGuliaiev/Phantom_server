@@ -1,8 +1,9 @@
-import User from '../models/users.js';
-import bcrypt from 'bcrypt';
-import crypto from 'crypto';
-import Message from '../models/message.js';
-import Contact from '../models/contact.js';
+import User     from '../models/users.js';
+import Message  from '../models/message.js';
+import Contact  from '../models/contact.js';
+import bcrypt   from 'bcrypt';
+import crypto   from 'crypto';
+
 
 // Проверка уникальности идентификатора
 export const checkIdentifier = async (req, res) => {
