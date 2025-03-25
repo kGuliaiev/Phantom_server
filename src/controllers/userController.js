@@ -2,7 +2,7 @@ import User from '../models/users.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import Message from '../models/message.js';
-import Contact from '../models/contacts.js';
+import Contact from '../models/contact.js';
 
 // Проверка уникальности идентификатора
 export const checkIdentifier = async (req, res) => {
