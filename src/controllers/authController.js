@@ -224,3 +224,21 @@ export const generateUniqueIdentifier = (req, res) => {
     const uniqueId = 'id_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
     res.json({ identifier: uniqueId });
   };
+
+
+  // Удаление всех данных пользователя
+export const deleteUserCompletely = async (req, res) => {
+    const { username } = req.params;
+    try {
+      await Promise.all([
+        User.deleteOne({ username }),
+        Chat.deleteMany({ $or: [{ senderId: username }, { receiverId: username }] }),
+        Message.deleteMany({ $or: [{ senderId: username }, { receiverId: username }] }),
+        Status.deleteMany({ userId: username }),
+      ]);
+      res.status(200).json({ message: 'Все данные пользователя удалены' });
+    } catch (err) {
+      console.error('Ошибка при удалении всех данных:', err);
+      res.status(500).json({ message: 'Ошибка удаления' });
+    }
+  };

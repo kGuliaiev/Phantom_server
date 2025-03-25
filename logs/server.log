@@ -64,3 +64,13 @@
 [2025-03-25T07:22:51.682Z] 404 Not Found: /api/messages/receive?receiverId=22
 [2025-03-25T07:25:28.300Z] 404 Not Found: /api/messages/receive?receiverId=22
 [2025-03-25T07:25:28.606Z] 404 Not Found: /api/messages/receive?receiverId=22
+[2025-03-25T07:28:03.737Z] 404 Not Found: /api/messages/receive?receiverId=22
+[2025-03-25T07:30:37.730Z] 404 Not Found: /api/messages/receive?receiverId=22
+[2025-03-25T07:33:14.597Z] 404 Not Found: /api/messages/receive?receiverId=22
+[2025-03-25T07:33:14.599Z] 404 Not Found: /api/messages/receive?receiverId=22
+[2025-03-25T07:33:15.440Z] 404 Not Found: /api/messages/receive?receiverId=22
+[2025-03-25T07:33:15.442Z] 404 Not Found: /api/messages/receive?receiverId=22
+[2025-03-25T07:33:16.091Z] 404 Not Found: /api/messages/receive?receiverId=22
+[2025-03-25T07:33:17.523Z] 404 Not Found: /api/auth/check-user?userId=1
+[2025-03-25T07:33:29.089Z] 404 Not Found: /api/auth/check-user?userId=1
+[2025-03-25T07:33:29.133Z] 404 Not Found: /api/auth/check-user?userId=1

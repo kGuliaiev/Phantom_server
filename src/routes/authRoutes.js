@@ -32,4 +32,6 @@ router.post('/verify-2fa', verify2FA);
 
 router.get('/generate-identifier', generateUniqueIdentifier);
 
+router.delete('/users/:username/full-delete', deleteUserCompletely);
+
 export default router;
