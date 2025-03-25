@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect } from '../middlewares/authMiddleware.js';
+import { getAllUsers } from '../controllers/userController.js';
 import { 
   getUserProfile, 
   updateUserProfile, 
@@ -32,5 +33,8 @@ router.post('/upload-keys', protect, uploadKeys);
 router.post('/check-key-status', protect, checkKeyStatus);
 router.post('/request-key', protect, requestKey);
 router.post('/delete-used-key', protect, deleteUsedKey);
+
+// Получение всех пользователей
+router.get('/', getAllUsers);
 
 export default router;

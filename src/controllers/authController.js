@@ -32,14 +32,14 @@ const isBase64 = (str) => {
         return res.status(400).json({ message: 'Все поля обязательны для регистрации' });
       }
   
-      if (!isBase64(publicKey) || !isBase64(identityKey) || !isBase64(signedPreKey)) {
+      if (!isBase64(identityKey)) {
         console.log('❌ Формат одного из ключей неверен (не Base64)');
-        return res.status(400).json({ message: 'Некорректный формат ключей (должен быть Base64)' });
+        return res.status(400).json({ message: 'Некорректный формат identityKey (должен быть Base64)' });
       }
   
-      if (!Array.isArray(oneTimePreKeys) || oneTimePreKeys.some(k => !isBase64(k))) {
+      if (!Array.isArray(oneTimePreKeys) || oneTimePreKeys.length === 0) {
         console.log('❌ Формат одного из одноразовых ключей неверен');
-        return res.status(400).json({ message: 'Некорректный формат одноразовых ключей' });
+        return res.status(400).json({ message: 'oneTimePreKeys должен быть массивом с ключами' });
       }
   
       const existingUsername = await User.findOne({ username });

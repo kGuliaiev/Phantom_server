@@ -19,6 +19,17 @@ export const checkIdentifier = async (req, res) => {
     }
 };
 
+// Получение списка всех пользователей
+export const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({}, 'username identifier');
+        res.json(users);
+    } catch (error) {
+        console.error('❌ Ошибка при получении пользователей:', error);
+        res.status(500).json({ message: 'Ошибка при загрузке пользователей' });
+    }
+};
+
 // Генерация уникального идентификатора
 export const generateUniqueIdentifier = async (req, res) => {
     try {

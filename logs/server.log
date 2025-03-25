@@ -29,3 +29,14 @@
 [2025-03-24T12:26:12.798Z] 404 Not Found: /api/auth/generate-identifier
 [2025-03-24T12:26:12.808Z] 404 Not Found: /api/auth/generate-identifier
 [2025-03-24T12:26:12.810Z] 404 Not Found: /api/auth/generate-identifier
+[2025-03-24T16:08:50.089Z] 404 Not Found: /api/users
+[2025-03-24T16:09:30.368Z] 404 Not Found: /api/users
+[2025-03-24T16:12:49.448Z] 404 Not Found: /receive-messages?receiverId=11
+[2025-03-24T16:12:54.124Z] 404 Not Found: /receive-messages?receiverId=11
+[2025-03-24T16:12:54.718Z] 404 Not Found: /receive-messages?receiverId=11
+[2025-03-24T16:12:55.394Z] 404 Not Found: /receive-messages?receiverId=11
+[2025-03-24T16:12:55.930Z] 404 Not Found: /receive-messages?receiverId=11
+[2025-03-24T16:12:56.109Z] 404 Not Found: /receive-messages?receiverId=11
+[2025-03-24T16:12:56.710Z] 404 Not Found: /receive-messages?receiverId=11
+[2025-03-24T16:13:04.002Z] 404 Not Found: /receive-messages?receiverId=11
+[2025-03-24T16:13:04.547Z] 404 Not Found: /receive-messages?receiverId=11
