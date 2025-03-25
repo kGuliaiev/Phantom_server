@@ -1,4 +1,5 @@
 import express from 'express';
+import { deleteUserCompletely } from '../controllers/userController.js';
 import { 
     registerUser, 
     loginUser, 

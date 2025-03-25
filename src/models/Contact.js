@@ -1,4 +1,4 @@
-// Файл: src/models/Contact.js
+// Файл: src/models/contact.js
 import mongoose from 'mongoose';
 
 const contactSchema = new mongoose.Schema({

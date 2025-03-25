@@ -1,6 +1,8 @@
 import User from '../models/users.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import Message from '../models/message.js';
+import Contact from '../models/contacts.js';
 
 // Проверка уникальности идентификатора
 export const checkIdentifier = async (req, res) => {
@@ -130,3 +132,30 @@ export const updateUserProfile = async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера' });
     }
 };
+
+// Удаление пользователя, его чатов, сообщений и ключей
+export const deleteUserCompletely = async (req, res) => {
+    try {
+      const { username } = req.params;
+  
+      if (!username) {
+        return res.status(400).json({ message: 'Имя пользователя не указано' });
+      }
+  
+      console.log(`🧨 Удаление всех данных пользователя: ${username}`);
+  
+      // Удаляем пользователя
+      await User.deleteOne({ username });
+  
+      // Удаляем все сообщения, где он — отправитель или получатель
+      await Message.deleteMany({ $or: [{ senderId: username }, { receiverId: username }] });
+  
+      // Удаляем контакты (из записных книжек)
+      await Contact.deleteMany({ $or: [{ owner: username }, { contact: username }] });
+  
+      res.status(200).json({ message: 'Все данные пользователя удалены' });
+    } catch (err) {
+      console.error('❌ Ошибка при полном удалении пользователя:', err);
+      res.status(500).json({ message: 'Ошибка сервера при удалении данных' });
+    }
+  };
