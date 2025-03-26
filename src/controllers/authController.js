@@ -115,8 +115,7 @@ export const loginUser = async (req, res) => {
 
     res.json({
       token,
-      userId: user._id,
-      username: user.username
+      userId: user._id
     });
   } catch (err) {
     console.log('❗ Ошибка при входе:', err.message);
