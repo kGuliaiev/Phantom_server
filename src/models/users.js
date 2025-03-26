@@ -21,7 +21,7 @@ const UserSchema = new Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   identifier: { type: String, required: true, unique: true },
-
+  nickname: { type: String, required: true },
   publicKey: { type: String },         // Для совместимости
   identityKey: { type: String, required: true },
 
