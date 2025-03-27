@@ -3,19 +3,19 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import authRoutes from './routes/authRoutes.js';
-import http from 'http';
-import { Server } from 'socket.io';
-import connectDB from './config/db.js';
-import routes from './routes/index.js';
-import contactsRoutes from './routes/contactsRoutes.js';
+import express                    from 'express';
+import cors                       from 'cors';
+import helmet                     from 'helmet';
+import rateLimit                  from 'express-rate-limit';
+import authRoutes                 from './routes/authRoutes.js';
+import http                       from 'http';
+import { Server }                 from 'socket.io';
+import connectDB                  from './config/db.js';
+import routes                     from './routes/index.js';
+import contactRoutes              from './routes/contactRoutes.js';
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
-import { requestLogger } from './middlewares/requestLogger.js';
-import { handleConnection } from './controllers/chatController.js';
+import { requestLogger }          from './middlewares/requestLogger.js';
+import { handleConnection }       from './controllers/chatController.js';
 
 
 // Подключение к базе данных MongoDB
@@ -47,7 +47,7 @@ app.use('/api/', apiLimiter);
 
 // Подключение маршрутов
 app.use('/api', routes);
-app.use('/api/contacts', contactsRoutes);
+app.use('/api/contacts', contactRoutes);
 app.use('/api/auth', authRoutes);
 
 // Middleware для обработки ошибок

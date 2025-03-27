@@ -90,3 +90,8 @@
 [2025-03-25T14:51:13.753Z] 404 Not Found: /api/auth/registerUser
 [2025-03-25T14:53:43.483Z] 404 Not Found: /api/registerUser
 [2025-03-25T14:56:00.138Z] 404 Not Found: /api/register
+[2025-03-26T13:25:49.268Z] 404 Not Found: /contacts/null
+[2025-03-26T13:25:49.271Z] 404 Not Found: /contacts/null
+[2025-03-26T13:25:57.831Z] 404 Not Found: /auth/check-user?identifier=C5B50A03
+[2025-03-26T13:26:04.818Z] 404 Not Found: /auth/check-user?identifier=578F2DFE
+[2025-03-27T09:27:38.726Z] 404 Not Found: /favicon.ico
