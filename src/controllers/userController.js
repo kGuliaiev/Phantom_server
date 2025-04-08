@@ -5,26 +5,9 @@ import bcrypt   from 'bcrypt';
 import crypto   from 'crypto';
 
 
-// Генерация уникального идентификатора
-export const generateUniqueIdentifier = async (req, res) => {
-    try {
-      let identifier;
-      let isUnique = false;
-  
-      while (!isUnique) {
-        identifier = crypto.randomBytes(4).toString('hex').toUpperCase(); // 8-символьный HEX, e.g. 'A1C2D3E4'
-        const existingUser = await User.findOne({ identifier });
-        if (!existingUser) isUnique = true;
-      }
-  
-      res.json({ identifier });
-    } catch (error) {
-      console.error('❌ Ошибка при генерации идентификатора:', error);
-      res.status(500).json({ message: 'Ошибка генерации идентификатора' });
-    }
-  };
 
-// // Проверка уникальности идентификатора
+
+// Проверка уникальности идентификатора
 export const checkIdentifier = async (req, res) => {
     try {
         const { identifier } = req.body;
@@ -161,4 +144,8 @@ export const deleteUserCompletely = async (req, res) => {
       console.error('❌ Ошибка при полном удалении пользователя:', err);
       res.status(500).json({ message: 'Ошибка сервера при удалении данных' });
     }
+  };
+
+  export const getUserByIdentifierAndUsernameHash = async (identifier, usernameHash) => {
+    return await User.findOne({ identifier, username: usernameHash });
   };

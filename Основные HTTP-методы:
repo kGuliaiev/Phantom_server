@@ -1,0 +1,68 @@
+// Получить список пользователей
+router.get('/users', getUsers); - ничего не изменяет
+
+// Создать нового пользователя
+router.post('/users', createUser); - Создает нового пользователя. Передает данные в теле запроса (например, имя, email и т.д.)
+
+// Обновить пользователя полностью
+router.put('/users/:id', updateUser); - Обновляет существующего пользователя. Передает данные в теле запроса (например, имя, email и т.д.). Полностью заменяет информацию о пользователе.
+
+// Обновить только часть информации (например, email)
+router.patch('/users/:id', updateUserPartially); - Обновляет только часть информации о пользователе. Передает данные в теле запроса (например, только email). Не заменяет всю информацию о пользователе.
+
+// Удалить пользователя
+router.delete('/users/:id', deleteUser); - Удаляет пользователя по его ID. Передает ID в параметрах URL (например, /users/123). Не требует передачи данных в теле запроса.
+
+✨ Итого:
+	•	GET — безопасный, без изменений.
+	•	POST — создание.
+	•	PUT — замена.
+	•	PATCH — частичное изменение.
+	•	DELETE — удаление.
+
+
+    ---------
+
+    Чтобы правильно передать id в маршрут router.put('/users/:id', updateUser);, ты должен указать его в URL-запросе при отправке PUT-запроса, например:
+
+-------Прмиер 1:
+    const userId = '64af83c9bfc2b'; // пример ID пользователя
+const updatedData = {
+  name: 'Новое имя',
+  email: 'new@email.com'
+};
+
+fetch(`http://localhost:5000/users/${userId}`, {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(updatedData)
+})
+  .then(res => res.json())
+  .then(data => console.log('✅ Обновлено:', data))
+  .catch(err => console.error('❌ Ошибка:', err));
+
+  -------------Пример 2:
+  URL:
+  PUT http://localhost:5000/users/64af83c9bfc2b
+
+  Body (JSON):
+  {
+  "name": "Новое имя",
+  "email": "new@email.com"
+}
+
+Express.js на сервере:
+router.put('/users/:id', async (req, res) => {
+  const userId = req.params.id;
+  const newData = req.body;
+
+  try {
+    const updated = await User.findByIdAndUpdate(userId, newData, { new: true });
+    if (!updated) return res.status(404).send('Пользователь не найден');
+    res.json(updated);
+  } catch (error) {
+    res.status(500).send('Ошибка при обновлении пользователя');
+  }
+});

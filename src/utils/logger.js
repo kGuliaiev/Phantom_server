@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs   from 'fs';
 import path from 'path';
 
 const logFilePath = path.join(process.cwd(), 'logs', 'server.log');

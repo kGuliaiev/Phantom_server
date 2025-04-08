@@ -1,27 +1,46 @@
+// src/model/message.js
+
 import mongoose from 'mongoose';
-const Schema = mongoose.Schema;
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
-const MessageSchema = new Schema({
-    messageId: { type: String, required: true, unique: true },
-    chatId: { type: Schema.Types.ObjectId, ref: 'Chat', required: true, index: true },
-    senderId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    encryptedContent: { type: String, required: true },
-    iv: { type: String, required: true },
+const logFile = path.join('./logs', 'messages.log');
 
-    // Список получателей с их статусами (доставлено, просмотрено, удалено)
-    recipients: [
-        {
-            userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-            status: {
-                type: String,
-                enum: ['sent', 'delivered', 'read', 'deleted'],
-                default: 'sent',
-            },
-            _id: false
-        }
-    ],
+function logMessageEvent(event, error = null) {
+  const logEntry = `[${new Date().toISOString()}] (${os.hostname()}) EVENT: ${event} ${error ? `| ERROR: ${error}` : ''}\n`;
+  fs.appendFileSync(logFile, logEntry);
+}
 
-    timestamp: { type: Date, default: Date.now }
+const messageSchema = new mongoose.Schema({
+  messageId: { type: String, required: true, unique: true },
+  senderId: { type: String, required: true },
+  receiverId: { type: String, required: true },
+  chatId: { type: String, required: true, default: 'default' },
+  encryptedContent: { type: String, required: true },
+  iv: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+  status: {
+    type: String,
+    enum: ['sent', 'delivered', 'read'],
+    default: 'sent'
+  }
 });
 
-export default mongoose.model('Message', MessageSchema);
+messageSchema.post('save', function(doc) {
+  logMessageEvent(`Message saved: from ${doc.senderId} to ${doc.receiverId}`);
+}, function(error, doc, next) {
+  logMessageEvent(`Failed to save message from ${doc?.senderId} to ${doc?.receiverId}`, error.message);
+  next(error);
+});
+
+messageSchema.post('remove', function(doc) {
+  logMessageEvent(`Message removed: from ${doc.senderId} to ${doc.receiverId}`);
+}, function(error, doc, next) {
+  logMessageEvent(`Failed to remove message from ${doc?.senderId} to ${doc?.receiverId}`, error.message);
+  next(error);
+});
+
+const Message = mongoose.model('Message', messageSchema);
+
+export default Message;

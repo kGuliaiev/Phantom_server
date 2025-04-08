@@ -2,6 +2,44 @@
 import Contact from '../models/contact.js';
 import User from '../models/users.js';
 
+// ✅ Получить список контактов (с проверкой токена)
+export const getContacts = async (req, res) => {
+  const { tokenUser, identifier } = req.body;
+  console.log("🔍 Получен запрос на список контактов:", identifier);
+
+  if (!identifier) {
+    return res.status(400).json({ message: 'Отсутствует идентификатор в теле запроса' });
+  }
+
+
+  if (!req.user || req.user.identifier !== identifier) {
+    console.warn("⚠️ Несовпадение идентификаторов или отсутствует пользователь:", {
+      tokenUser: req.user,
+      requestIdentifier: identifier
+    });
+
+
+    return res.status(403).json({
+      message: 'Невалидный токен или несоответствие идентификатора',
+      tokenUser: req.user,
+      requestIdentifier: identifier
+    });
+  }
+
+
+  try {
+    const contacts = await Contact.find({ owner: identifier })
+      .sort({ nickname: 1 })
+      .select('contactId nickname publicKey -_id');
+
+    console.log("📒 Контакты найдены:", contacts.length);
+    res.status(200).json(contacts);
+  } catch (err) {
+    console.error("❌ Ошибка на сервере:", err);
+    res.status(500).json({ message: 'Ошибка получения контактов', error: err.message });
+  }
+};
+
 // ✅ Добавить контакт
 export const addContact = async (req, res) => {
   const { owner, contactId, nickname } = req.body;
@@ -36,22 +74,6 @@ export const addContact = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Ошибка добавления контакта', error: err.message });
   }
-};
-
-// ✅ Получить список контактов
-export const getContacts = async (req, res) => {
-  const { owner } = req.params;
-
-  try {
-    const contacts = await Contact.find({ owner })
-      .sort({ nickname: 1 })
-      .select('contactId nickname publicKey -_id');
-    res.status(200).json(contacts);
-
-  } catch (err) {
-    res.status(500).json({ message: 'Ошибка получения контактов', error: err.message });
-  }
-  console.log('>> ЗАПРОС СПИСКА КОНТАКТОВ:', req.params.owner);
 };
 
 // ✅ Удалить контакт

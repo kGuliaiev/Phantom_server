@@ -2,8 +2,7 @@ import express from 'express';
 import Message from '../models/message.js';
 
 export const handleConnection = (socket) => {
-    console.log(`Пользователь подключился: ${socket.id}`);
-
+    
     // Обработчик приема сообщений
     socket.on('sendMessage', async (data) => {
         console.log(`Сообщение от ${socket.id}:`, data);
@@ -49,6 +48,9 @@ export const handleConnection = (socket) => {
     });
 };
 
+
+
+
 // Маршрут для обновления статуса сообщения
 export const updateMessageStatusRoute = async (req, res) => {
     const { messageId, userId, status } = req.body;
@@ -70,5 +72,7 @@ export const updateMessageStatusRoute = async (req, res) => {
         res.status(500).json({ message: 'Ошибка при обновлении статуса' });
     }
 };
+
+
 
 export default { handleConnection, updateMessageStatusRoute };
