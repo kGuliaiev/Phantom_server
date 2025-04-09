@@ -34,10 +34,41 @@ const io = new Server(server, {
 app.set('io', io); // Устанавливаем экземпляр io в приложение, чтобы можно было использовать его в других частях (например, в контроллерах)
 
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+
+function logWebSocketEvent(event, details) {
+  const now = new Date().toISOString();
+  const ip = details.ip || 'unknown';
+  const logEntry = `[${now}][IP: ${ip}][File: index.js] EVENT: ${event} - ${JSON.stringify(details)}\n`;
+  const logFilePath = path.join(process.cwd(), 'logs', 'websocket.log');
+  fs.appendFileSync(logFilePath, logEntry);
+}
 import { getUserByIdentifierAndUsernameHash } from './controllers/userController.js';
 // позже динамически импортируется: const Contact = (await import('./models/Contact.js')).default;
 
 io.on('connection', (socket) => {
+  // Обработчик события, когда сообщение доставлено
+  socket.on('messageDelivered', ({ messageId, senderId, receiverId, apiUsed }) => {
+    logWebSocketEvent('messageDelivered', { messageId, senderId, receiverId, api: apiUsed });
+    console.log(`DEBUG: Сообщение ${messageId} доставлено от ${senderId} к ${receiverId} через API: ${apiUsed}`);
+    // Здесь можно добавить дополнительную логику (например, уведомление нужного сокета)
+  });
+
+  // Обработчик события, когда сообщение получено
+  socket.on('messageReceived', ({ messageId, senderId, receiverId, apiUsed }) => {
+    logWebSocketEvent('messageReceived', { messageId, senderId, receiverId, api: apiUsed });
+    console.log(`DEBUG: Сообщение ${messageId} получено от ${senderId} к ${receiverId} через API: ${apiUsed}`);
+    // Дополнительная логика при получении сообщения
+  });
+
+  // Обработчик события, когда сообщение прочитано
+  socket.on('messageRead', ({ messageId, senderId, receiverId, apiUsed }) => {
+    logWebSocketEvent('messageRead', { messageId, senderId, receiverId, api: apiUsed });
+    console.log(`DEBUG: Сообщение ${messageId} прочитано от ${senderId} к ${receiverId} через API: ${apiUsed}`);
+    // Можно уведомить отправителя о прочтении
+  });
+  
   socket.on('identify', async ({ identifier, usernameHash, token }) => {
     try {
       if (!token) return socket.disconnect(true);
@@ -134,6 +165,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('chatClearedAck', ({ contactId, clearedBy, from }) => {
+    logWebSocketEvent('chatClearedAck_received', { from, contactId, ip: socket.handshake && socket.handshake.address });
     console.log(`📨 chatClearedAck получен от ${from} (очищено для contactId=${contactId})`);
     // Найти socketId того, кто иницировал удаление (clearedBy), чтобы отправить ему уведомление
     const target = onlineUsers.get(clearedBy);
