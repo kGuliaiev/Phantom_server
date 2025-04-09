@@ -132,6 +132,16 @@ io.on('connection', (socket) => {
 
     console.log(`🔴 ${identifier} (${userEntry.nickname}) — Пользователь offline (${socket.id})`);
   });
+
+  socket.on('chatClearedAck', ({ contactId, clearedBy, from }) => {
+    console.log(`📨 chatClearedAck получен от ${from} (очищено для contactId=${contactId})`);
+    // Найти socketId того, кто иницировал удаление (clearedBy), чтобы отправить ему уведомление
+    const target = onlineUsers.get(clearedBy);
+    if (target?.socketId) {
+      io.to(target.socketId).emit('chatClearedAck', { contactId, from });
+    }
+  });
+  
 });
 
 // Middleware для парсинга JSON и логирования запросов

@@ -89,3 +89,34 @@ export const sendMessage = async (req, res) => {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 };
+
+
+ // Добавляем новую функцию clearConversation для удаления переписки
+export const clearConversation = async (req, res) => {
+  try {
+    const { contactId } = req.query;
+    if (!contactId) {
+      return res.status(400).json({ message: 'contactId обязателен для удаления переписки' });
+    }
+
+    const currentId = req.user.identifier; // получаем идентификатор текущего пользователя из защищённого middleware
+
+    // Удаляем сообщения, где текущий пользователь и собеседник участвуют в обмене
+    await Message.deleteMany({
+      $or: [
+        { senderId: currentId, receiverId: contactId },
+        { senderId: contactId, receiverId: currentId }
+      ]
+    });
+    console.log(`🗑 Переписка между ${currentId} и ${contactId} удалена из базы`);
+    
+    // Получаем экземпляр WebSocket и ретранслируем событие clearChat для обоих участников
+    const io = req.app.get('io');
+    io.emit('chatCleared', { contactId, clearedBy: currentId });
+
+    return res.status(200).json({ message: 'Переписка удалена' });
+  } catch (error) {
+    console.error('Ошибка при удалении переписки:', error);
+    return res.status(500).json({ message: 'Ошибка сервера при удалении переписки' });
+  }
+};
