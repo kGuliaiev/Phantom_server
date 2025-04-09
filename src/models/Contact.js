@@ -3,12 +3,18 @@
 import mongoose from 'mongoose';
 
 const contactSchema = new mongoose.Schema({
-  owner:      { type: String, required: true },       // username владельца записной книги
-  contactId:  { type: String, required: true },       // username добавленного пользователя
-  nickname:   { type: String, required: true },       // имя, которое ввёл владелец
-  publicKey:  { type: String, required: true },       // публичный ключ контакта
+  owner:      { type: String, required: true },
+  contactId:  { type: String, required: true },
+  nickname:   { type: String, required: true },
+  publicKey:  { type: String, required: true },
+  status:     { 
+                type: String, 
+                enum: ['pending', 'accepted', 'blocked'], 
+                default: 'pending' 
+              },
+  introduction: { type: String, default: '' }
 }, {
-  timestamps: true                                    // ✅ добавит createdAt и updatedAt автоматически
+  timestamps: true
 });
 
 const Contact = mongoose.model('Contact', contactSchema);
