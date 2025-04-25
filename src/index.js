@@ -6,18 +6,25 @@ import cors                       from 'cors';
 import helmet                     from 'helmet';
 import rateLimit                  from 'express-rate-limit';
 import http                       from 'http';
+import jwt                        from 'jsonwebtoken';
+import fs                         from 'fs';
+import path                       from 'path';
 import { Server }                 from 'socket.io';
 
-import authRoutes                 from './routes/authRoutes.js';
+
 import connectDB                  from './config/db.js';
+import authRoutes                 from './routes/authRoutes.js';
 import routes                     from './routes/index.js';
 import contactRoutes              from './routes/contactRoutes.js';
 import messageRoutes              from './routes/messageRoutes.js';
+
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
 import { requestLogger }          from './middlewares/requestLogger.js';
+
+import { getUserByIdentifierAndUsernameHash } from './controllers/userController.js';
 import { handleConnection }       from './controllers/chatController.js';
-import { v4 as uuidv4 }           from 'uuid'; // Добавь в начало файла
-import { onlineUsers }            from './utils/onlineUsers.js';
+import { v4 as uuidv4 }           from 'uuid';
+import onlineUsers            from './utils/onlineUsers.js';
 
 // Подключение к базе данных MongoDB
 connectDB();
@@ -28,14 +35,10 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-
-
 // Сохранение экземпляра WebSocket в приложении (при необходимости)
 app.set('io', io); // Устанавливаем экземпляр io в приложение, чтобы можно было использовать его в других частях (например, в контроллерах)
 
-import jwt from 'jsonwebtoken';
-import fs from 'fs';
-import path from 'path';
+
 
 function logWebSocketEvent(event, details) {
   const now = new Date().toISOString();
@@ -44,66 +47,48 @@ function logWebSocketEvent(event, details) {
   const logFilePath = path.join(process.cwd(), 'logs', 'websocket.log');
   fs.appendFileSync(logFilePath, logEntry);
 }
-import { getUserByIdentifierAndUsernameHash } from './controllers/userController.js';
+
+
 // позже динамически импортируется: const Contact = (await import('./models/Contact.js')).default;
 
 io.on('connection', (socket) => {
-  // Обработчик события, когда сообщение доставлено
-  socket.on('messageDelivered', ({ messageId, senderId, receiverId, apiUsed }) => {
-    logWebSocketEvent('messageDelivered', { messageId, senderId, receiverId, api: apiUsed });
-    console.log(`DEBUG: Сообщение ${messageId} доставлено от ${senderId} к ${receiverId} через API: ${apiUsed}`);
-    // Здесь можно добавить дополнительную логику (например, уведомление нужного сокета)
-  });
 
-  // Обработчик события, когда сообщение получено
-  socket.on('messageReceived', ({ messageId, senderId, receiverId, apiUsed }) => {
-    logWebSocketEvent('messageReceived', { messageId, senderId, receiverId, api: apiUsed });
-    console.log(`DEBUG: Сообщение ${messageId} получено от ${senderId} к ${receiverId} через API: ${apiUsed}`);
-    // Дополнительная логика при получении сообщения
-  });
-
-  // Обработчик события, когда сообщение прочитано
-  socket.on('messageRead', ({ messageId, senderId, receiverId, apiUsed }) => {
-    logWebSocketEvent('messageRead', { messageId, senderId, receiverId, api: apiUsed });
-    console.log(`DEBUG: Сообщение ${messageId} прочитано от ${senderId} к ${receiverId} через API: ${apiUsed}`);
-    // Можно уведомить отправителя о прочтении
-  });
   
   socket.on('identify', async ({ identifier, usernameHash, token }) => {
     try {
       if (!token) return socket.disconnect(true);
-
+  
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_jwt_secret');
       if (!decoded?.userId) return socket.disconnect(true);
-
+  
       const user = await getUserByIdentifierAndUsernameHash(identifier, usernameHash);
       if (!user || user._id.toString() !== decoded.userId) return socket.disconnect(true);
-
-      console.log(`🟢 ${identifier} (${user.nickname}) — авторизован по WebSocket (${socket.id})`);
+  
+      //console.log(`🟢 ${identifier} (${user.nickname}) — авторизован по WebSocket (${socket.id})`);
       onlineUsers.set(identifier, {
         socketId: socket.id,
         nickname: user.nickname,
       });
       socket.user = { identifier };
-
-      // Получить список владельцев, у которых этот пользователь в контактах
+  
+      // Получить список владельцев, у которых этот пользователь в контактах...
       const Contact = (await import('./models/contact.js')).default;
       const owners = await Contact.find({ contactId: identifier }).select('owner').lean();
       const uniqueOwners = [...new Set(owners.map(o => o.owner.toString()))];
-      console.log(`📣 [Online Update] Пользователь ${identifier} связан с:`, uniqueOwners);
- 
+      //console.log(`📣 [Online Update] Пользователь ${identifier} связан с:`, uniqueOwners);
+   
       for (const owner of uniqueOwners) {
-        console.log(`📡 Отправка статуса ${identifier} онлайн -> ${owner}`);
+        //console.log(`📡 Отправка статуса ${identifier} онлайн -> ${owner}`);
         const target = onlineUsers.get(owner);
         if (target?.socketId) {
           io.to(target.socketId).emit('userOnline', { identifier, isOnline: true });
         }
       }
- 
+   
       const myContacts = await Contact.find({ owner: identifier }).select('contactId').lean();
       const connectedContacts = myContacts.map(c => c.contactId.toString());
-      console.log(`🔗 Контакты ${identifier}:`, connectedContacts);
- 
+      //console.log(`🔗 Контакты ${identifier}:`, connectedContacts);
+   
       const result = new Set();
       result.add(identifier); // всегда включаем самого пользователя
       connectedContacts.forEach(cid => {
@@ -112,10 +97,52 @@ io.on('connection', (socket) => {
         }
       });
       const finalResult = Array.from(result);
-      console.log(`🟢 Онлайн-контакты ${identifier}:`, finalResult);
+      //console.log(`🟢 Онлайн-контакты ${identifier}:`, finalResult);
       io.to(socket.id).emit('onlineUsers', finalResult);
- 
-      // ⏱️ Периодическая отправка подтверждения онлайн-статуса (опционально)
+   
+      // Отправляем буферизированные сообщения, если таковые есть для данного пользователя
+      if (global.messageBuffer && global.messageBuffer.has(identifier)) {
+        const bufferedMessages = global.messageBuffer.get(identifier);
+        bufferedMessages.forEach((message) => {
+          io.to(socket.id).emit('message', {
+            sender: message.senderId,
+            encrypted: message.encryptedContent || message.encrypted,
+            iv: message.iv,
+            timestamp: message.timestamp,
+            messageId: message.messageId
+          });
+          console.log(`📤 Отправляем буферизованное сообщение ${message.messageId} для ${identifier}`);
+        });
+        global.messageBuffer.delete(identifier);
+      }
+      // Отправляем буферизированные обновления статусов сообщений, если таковые есть для данного пользователя
+      if (global.statusBuffer && global.statusBuffer.has(identifier)) {
+        const bufferedStatuses = global.statusBuffer.get(identifier);
+        bufferedStatuses.forEach((bufferedData) => {
+          io.to(socket.id).emit('messageAttributeChanged', bufferedData);
+          console.log(`📤 Отправляем буферизованный статус сообщения для ${identifier}:`, bufferedData);
+        });
+        global.statusBuffer.delete(identifier);
+      }
+      // После отправки onlineUsers и onlineUsers событие, прежде чем завершить идентификацию:
+      // Отправка всех сообщений, по которым нет ACK 'delivered'
+      const Message = (await import('./models/message.js')).default;
+      const undelivered = await Message.find({
+        'recipients.userId': identifier,
+        'recipients.status': 'sent'
+      });
+      for (const msg of undelivered) {
+        io.to(socket.id).emit('message', {
+          sender: msg.senderId,
+          encrypted: msg.encryptedContent,
+          iv: msg.iv,
+          timestamp: msg.timestamp,
+          messageId: msg.messageId
+        });
+        console.log(`🔄 Повторная доставка сообщения ${msg.messageId} для ${identifier}`);
+      }
+   
+      // Периодическая отправка статуса "онлайн"
       const intervalId = setInterval(() => {
         if (onlineUsers.has(identifier)) {
           for (const owner of uniqueOwners) {
@@ -127,11 +154,12 @@ io.on('connection', (socket) => {
         }
       }, 10000);
       socket.data.intervalId = intervalId;
-
+  
     } catch (err) {
       return socket.disconnect(true);
     }
   });
+
 
   socket.on('disconnect', async () => {
     if (!socket.user?.identifier) return;
@@ -153,7 +181,7 @@ io.on('connection', (socket) => {
  
     for (const owner of uniqueOwners) {
       if (onlineUsers.has(owner)) {
-        console.log(`📡 Отправка статуса ${identifier} оффлайн -> ${owner}`);
+        //console.log(`📡 Отправка статуса ${identifier} оффлайн -> ${owner}`);
         const target = onlineUsers.get(owner);
         if (target?.socketId) {
           io.to(target.socketId).emit('userOnline', { identifier, isOnline: false });
@@ -164,8 +192,59 @@ io.on('connection', (socket) => {
     console.log(`🔴 ${identifier} (${userEntry.nickname}) — Пользователь offline (${socket.id})`);
   });
 
+
+  socket.on('messageAttributeChanged', async (data) => {
+    // data: { messageId, attribute, value, sender, receiver }
+    const { messageId, attribute, value, sender, receiver } = data;
+    // После загрузки сообщения из базы, проверяем оригинального отправителя
+    try {
+      const Message = (await import('./models/message.js')).default;
+      const msg = await Message.findOne({ messageId });
+      let originalSender = msg?.senderId;
+      if (!originalSender && receiver) {
+        originalSender = receiver;
+      }
+      if (!msg) {
+        console.log(`Fallback to receiver for originalSender: ${originalSender}`);
+      }
+      if ((value === 'delivered' || value === 'seen') && socket.user?.identifier === originalSender) {
+        console.log(`⚠️ Ignoring self-ACK of ${value} for message ${messageId}`);
+        return;
+      }
+      console.log('Получено обновление статуса сообщения на сервере:', data);
+      const now = new Date().toLocaleString();
+      const shortId = messageId?.slice(0, 4) || '----';
+      console.log(`📩 msg=${shortId} ${sender} ➡ status=${value} @ ${now}`);
+      if (msg) {
+        msg.status = value;
+        await msg.save();
+       // console.log(`Статус сообщения ${messageId} обновлен в базе на "${value}"`);
+      } else {
+       // console.log(`Сообщение с ID ${messageId} не найдено в базе.`);
+      }
+      // Теперь пересылаем обновление отправителю (используем originalSender)
+      const senderEntry = onlineUsers.get(originalSender);
+      if (senderEntry && senderEntry.socketId) {
+        io.to(senderEntry.socketId).emit('messageAttributeChanged', { messageId, attribute, value, sender });
+        console.log(`Отправлено обновление статуса сообщения ${messageId} отправителю ${originalSender}`);
+      } else {
+        console.log(`Отправитель ${originalSender} не в сети или не найден.`);
+        if (!global.statusBuffer) {
+          global.statusBuffer = new Map();
+        }
+        const pendingStatuses = global.statusBuffer.get(originalSender) || [];
+        pendingStatuses.push({ messageId, attribute, value, sender, receiver });
+        global.statusBuffer.set(originalSender, pendingStatuses);
+        console.log(`🗄️ Буферизация статуса для ${originalSender}:`, { messageId, attribute, value });
+      }
+    } catch (error) {
+      console.error('Ошибка обновления статуса сообщения в базе:', error);
+    }
+  });
+
+
   socket.on('chatClearedAck', ({ contactId, clearedBy, from }) => {
-    logWebSocketEvent('chatClearedAck_received', { from, contactId, ip: socket.handshake && socket.handshake.address });
+    //logWebSocketEvent('chatClearedAck_received', { from, contactId, ip: socket.handshake && socket.handshake.address });
     console.log(`📨 chatClearedAck получен от ${from} (очищено для contactId=${contactId})`);
     // Найти socketId того, кто иницировал удаление (clearedBy), чтобы отправить ему уведомление
     const target = onlineUsers.get(clearedBy);
@@ -176,35 +255,16 @@ io.on('connection', (socket) => {
   
 });
 
-// Middleware для парсинга JSON и логирования запросов
-app.use(express.json());
-app.use(requestLogger);
-app.use(cors());
-app.use(helmet());
+
 
 // Ограничение количества запросов (DDoS защита)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 10000,
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use('/api/', apiLimiter);
 
-// Подключение маршрутов
-app.use('/api',           routes);
-
-app.use('/api/auth',      authRoutes);
-app.use('/api/contacts',  contactRoutes);
-app.use('/api/message',   messageRoutes);
-//app.use('/api/key',       keyRoutes);
-//app.use('/api/user',      userRoutes);
-//app.use('/api/chat',      chatRoutes);
-
-
-// Middleware для обработки ошибок
-app.use(notFound);
-app.use(errorHandler);
 
 // WebSocket обработка
 
@@ -214,6 +274,23 @@ app.use(errorHandler);
 //     console.log(`Маршрут: ${r.route.path} - Методы: ${Object.keys(r.route.methods)}`);
 //   }
 // });
+
+// Middleware для парсинга JSON и логирования запросов
+app.use(express.json());
+app.use(requestLogger);
+app.use(cors());
+app.use(helmet());
+
+app.use('/api',           apiLimiter);
+app.use('/api',           routes);
+
+app.use('/api/auth',      authRoutes);
+app.use('/api/contacts',  contactRoutes);
+app.use('/api/message',   messageRoutes);
+
+// Middleware для обработки ошибок
+app.use(notFound);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}`));

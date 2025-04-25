@@ -1,10 +1,12 @@
 // Контроллеры для аутентификации пользователей
 // Путь: src/controllers/authController.js
 
-import User from '../models/users.js';
-import jwt from 'jsonwebtoken';
+import jwt      from 'jsonwebtoken';
 import bcrypt   from 'bcrypt';
 import crypto   from 'crypto';
+
+import User     from '../models/users.js';
+
 
   // Генерация уникального идентификатора
   export const generateUniqueIdentifier = async (req, res) => {

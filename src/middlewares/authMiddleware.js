@@ -34,29 +34,3 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// async decryptMessage(encryptedBase64) {
-//   try {
-//     const encryptedData = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
-//     const iv = encryptedData.slice(0, 12);
-//     const encrypted = encryptedData.slice(12);
-
-//     const receiverPublicKey = localStorage.getItem('lastPublicKey');
-//     if (!receiverPublicKey) {
-//       throw new Error('Публичный ключ получателя не найден');
-//     }
-
-//     const importedKey = await this.importReceiverKey(receiverPublicKey);
-//     const aesKey = await this.deriveAESKey(importedKey);
-
-//     const decrypted = await crypto.subtle.decrypt(
-//       { name: "AES-GCM", iv },
-//       aesKey,
-//       encrypted
-//     );
-
-//     return new TextDecoder().decode(decrypted);
-//   } catch (error) {
-//     this._log(`❌ Ошибка decryptMessage: ${error.message}`);
-//     throw error;
-//   }
-// }

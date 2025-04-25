@@ -1,8 +1,8 @@
 // Маршруты для работы с пользователями
 // //src/routews/keyRoutes.js
 
-import express from 'express';
-import { protect } from '../middlewares/authMiddleware.js';
+import express      from 'express';
+import { protect }  from '../middlewares/authMiddleware.js';
 
 import { 
   uploadKeys, 
@@ -18,7 +18,5 @@ router.post('/upload-keys',         protect,    uploadKeys);
 router.post('/check-key-status',    protect,    checkKeyStatus);
 router.post('/request-key',         protect,    requestKey);
 router.post('/delete-used-key',     protect,    deleteUsedKey);
-
-
 
 export default router;
